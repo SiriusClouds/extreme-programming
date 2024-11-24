@@ -24,9 +24,7 @@ public class User {
 
     @Column(name = "contacts", columnDefinition = "TEXT")
     private String contacts; 
-    // 用于存储联系方式，类型为 JSON 格式的字符串
-
-    // Getters and Setters
+ 
     public Long getId() {
         return id;
     }
