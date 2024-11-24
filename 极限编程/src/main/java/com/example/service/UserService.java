@@ -110,12 +110,12 @@ public class UserService {
     // 批量收藏用户
     public void favoriteUsers(List<Long> ids) {
         userRepository.updateIsFavoriteByIdIn(ids, true);  // 调用批量更新收藏状态的方法
-    }
+    }    //这个功能暂时有bug，删除了
 
     // 批量取消收藏用户
     public void unfavoriteUsers(List<Long> ids) {
         userRepository.updateIsFavoriteByIdIn(ids, false);  // 调用批量更新收藏状态的方法
-    }
+    }    //这个功能暂时有bug，删除了
 
     // 查询所有收藏的用户
     public List<User> findAllFavoriteUsers() {
