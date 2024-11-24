@@ -22,7 +22,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Transactional
     @Query("UPDATE User u SET u.isFavorite = ?2 WHERE u.id IN ?1")
     void updateIsFavoriteByIdIn(List<Long> ids, Boolean isFavorite);
-
-    // 按照isFavorite字段查询所有用户
+    
     List<User> findByIsFavorite(Boolean isFavorite);
 }
