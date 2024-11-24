@@ -21,7 +21,7 @@
             <el-button type="primary" @click="loadFavorites">查看收藏的用户</el-button>
             <el-button type="success" @click="exportContacts">导出通讯录</el-button>
             <el-upload
-                    action="http://localhost:8080/user/import"
+                    action="http://121.40.211.180:8080/user/import"
                     accept=".xlsx"
                     :auto-upload="true"
                     :on-success="importSuccess">
@@ -136,13 +136,13 @@
         methods: {
             loadTable(num) {
                 this.pageNum = num;
-                $.get(`http://localhost:8080/user/page?pageNum=${this.pageNum}&pageSize=${this.pageSize}&name=${this.name}`)
+                $.get(`http://121.40.211.180:8080/user/page?pageNum=${this.pageNum}&pageSize=${this.pageSize}&name=${this.name}`)
                     .then(res => {
                         this.page = res.data;
                     });
             },
             loadFavorites() {
-                $.get('http://localhost:8080/user/favorites')
+                $.get('http://121.40.211.180:8080/user/favorites')
                     .then(res => {
                         this.page = { content: res.data, totalElements: res.data.length };
                         this.$message.success("收藏用户加载成功");
@@ -154,7 +154,7 @@
             toggleFavorite(row) {
                 row.isFavorite = !row.isFavorite;
                 $.ajax({
-                    url: `http://localhost:8080/user/${row.id}/${row.isFavorite ? 'favorite' : 'unfavorite'}`,
+                    url: `http://121.40.211.180:8080/user/${row.id}/${row.isFavorite ? 'favorite' : 'unfavorite'}`,
                     type: 'post',
                     contentType: 'application/json',
                     data: JSON.stringify({ favorite: row.isFavorite })
@@ -206,7 +206,7 @@
                 this.form.contacts = JSON.stringify(this.form.contacts);
                 const method = this.form.id ? 'put' : 'post';
                 $.ajax({
-                    url: 'http://localhost:8080/user',
+                    url: 'http://121.40.211.180:8080/user',
                     type: method,
                     contentType: 'application/json',
                     data: JSON.stringify(this.form),
@@ -221,7 +221,7 @@
             },
             del(id) {
                 $.ajax({
-                    url: `http://localhost:8080/user/${id}`,
+                    url: `http://121.40.211.180:8080/user/${id}`,
                     type: 'delete'
                 }).then(() => {
                     this.loadTable(1);
@@ -232,7 +232,7 @@
                 this.loadTable(1);
             },
             exportContacts() {
-                window.location.href = 'http://localhost:8080/user/export';
+                window.location.href = 'http://121.40.211.180:8080/user/export';
             }
         }
     });
