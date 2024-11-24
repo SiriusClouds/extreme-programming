@@ -17,7 +17,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query(value = "select * from user where name like %?1%", nativeQuery = true)
     Page<User> findByNameLike(String name, Pageable pageRequest);
 
-    // 批量更新收藏状态
     @Modifying
     @Transactional
     @Query("UPDATE User u SET u.isFavorite = ?2 WHERE u.id IN ?1")
