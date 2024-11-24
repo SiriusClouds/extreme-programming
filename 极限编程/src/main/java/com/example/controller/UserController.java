@@ -113,6 +113,7 @@ public class UserController {
         userService.favoriteUsers(ids);  // 批量收藏
         return Result.success();
     }
+    //这个功能暂时有bug，删除了
 
     // 批量取消收藏用户
     @PostMapping("/unfavorite")
