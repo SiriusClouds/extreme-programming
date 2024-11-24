@@ -18,6 +18,7 @@
             <el-button type="primary" @click="loadTable(1)">查询</el-button>
         </el-col>
         <el-col :span="6" style="margin-bottom: 10px">
+            <el-button type="primary" @click="loadFavorites">查看收藏的用户</el-button>
             <el-button type="success" @click="exportContacts">导出通讯录</el-button>
             <el-upload
                     action="http://localhost:8080/user/import"
@@ -33,22 +34,40 @@
             :data="page.content"
             stripe
             border
-            style="width: 100%">
+            style="width: 100%"
+            ref="table">
+        <!-- 展开按钮 -->
+        <el-table-column type="expand">
+            <template slot-scope="scope">
+                <div v-if="scope.row.contacts && parseContacts(scope.row.contacts).length > 0">
+                    <p v-for="(contact, index) in parseContacts(scope.row.contacts)" :key="index">
+                        {{ contact.type }}: {{ contact.value }}
+                    </p>
+                </div>
+                <div v-else>无联系方式</div>
+            </template>
+        </el-table-column>
         <el-table-column prop="name" label="用户名"></el-table-column>
         <el-table-column prop="age" label="年龄" width="100"></el-table-column>
         <el-table-column prop="sex" label="性别" width="100"></el-table-column>
         <el-table-column prop="contacts" label="联系方式">
             <template slot-scope="scope">
-                <div v-for="contact in scope.row.contacts" :key="contact.type">
-                    {{ contact.type }}: {{ contact.value }}
+                <div v-if="scope.row.contacts && parseContacts(scope.row.contacts).length > 0">
+                    <p v-for="(contact, index) in parseContacts(scope.row.contacts)" :key="index">
+                        {{ contact.type }}: {{ contact.value }}
+                    </p>
                 </div>
+                <div v-else>无联系方式</div>
             </template>
         </el-table-column>
         <el-table-column fixed="right" label="操作" width="150">
             <template slot-scope="scope">
-                <el-button type="primary" icon="el-icon-star-off" size="small" circle
-                           :class="{ 'is-favorite': scope.row.favorite }"
-                           @click="toggleFavorite(scope.row)">
+                <el-button
+                        :type="scope.row.isFavorite ? 'warning' : 'primary'"
+                        icon="el-icon-star-off"
+                        size="small"
+                        circle
+                        @click="toggleFavorite(scope.row)">
                 </el-button>
                 <el-button type="primary" icon="el-icon-edit" size="small" circle @click="edit(scope.row)"></el-button>
                 <el-button type="danger" icon="el-icon-delete" size="small" circle @click="del(scope.row.id)"></el-button>
@@ -122,25 +141,83 @@
                         this.page = res.data;
                     });
             },
+            loadFavorites() {
+                $.get('http://localhost:8080/user/favorites')
+                    .then(res => {
+                        this.page = { content: res.data, totalElements: res.data.length };
+                        this.$message.success("收藏用户加载成功");
+                    })
+                    .catch(() => {
+                        this.$message.error("加载收藏用户失败，请重试");
+                    });
+            },
+            toggleFavorite(row) {
+                row.isFavorite = !row.isFavorite;
+                $.ajax({
+                    url: `http://localhost:8080/user/${row.id}/${row.isFavorite ? 'favorite' : 'unfavorite'}`,
+                    type: 'post',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ favorite: row.isFavorite })
+                }).then(() => {
+                    this.$message.success(row.isFavorite ? "已收藏" : "已取消收藏");
+                    this.loadTable(this.pageNum);
+                }).catch(() => {
+                    this.$message.error("操作失败，请重试");
+                    row.isFavorite = !row.isFavorite;
+                });
+            },
+            parseContacts(contacts) {
+                try {
+                    return JSON.parse(contacts);
+                } catch (e) {
+                    return [];
+                }
+            },
+            generateRandomPhone() {
+                const prefix = ['132', '133', '134', '135', '136', '137', '138', '139', '150', '151'];
+                const randomPrefix = prefix[Math.floor(Math.random() * prefix.length)];
+                const randomNumber = Math.random().toString().slice(2, 11);
+                return `${randomPrefix}${randomNumber}`;
+            },
+            addContact() {
+                this.form.contacts.push({ type: '', value: '' });
+            },
+            removeContact(index) {
+                this.form.contacts.splice(index, 1);
+            },
             add() {
                 this.dialogVisible = true;
-                this.form = { contacts: [] };
+                this.form = {
+                    contacts: [
+                        { type: 'phone', value: this.generateRandomPhone() }, // 默认随机联系方式
+                    ],
+                };
             },
             edit(row) {
                 this.form = JSON.parse(JSON.stringify(row));
                 this.dialogVisible = true;
             },
             save() {
+                if (!this.form.contacts || this.form.contacts.length === 0) {
+                    this.form.contacts = [
+                        { type: 'phone', value: this.generateRandomPhone() },
+                    ];
+                }
+                this.form.contacts = JSON.stringify(this.form.contacts);
                 const method = this.form.id ? 'put' : 'post';
                 $.ajax({
                     url: 'http://localhost:8080/user',
                     type: method,
                     contentType: 'application/json',
-                    data: JSON.stringify(this.form)
-                }).then(() => {
-                    this.dialogVisible = false;
-                    this.loadTable(1);
-                });
+                    data: JSON.stringify(this.form),
+                })
+                    .then(() => {
+                        this.dialogVisible = false;
+                        this.loadTable(this.pageNum); // 确保新增用户后，重新加载数据
+                    })
+                    .catch(() => {
+                        this.$message.error('保存失败，请重试');
+                    });
             },
             del(id) {
                 $.ajax({
@@ -150,32 +227,16 @@
                     this.loadTable(1);
                 });
             },
-            toggleFavorite(row) {
-                row.favorite = !row.favorite;
-                $.ajax({
-                    url: `http://localhost:8080/user/${row.id}/favorite`,
-                    type: 'post',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ favorite: row.favorite })
-                }).then(() => {
-                    this.$message.success(row.favorite ? "已收藏" : "已取消收藏");
-                });
-            },
-            exportContacts() {
-                window.location.href = 'http://localhost:8080/user/export';
-            },
             importSuccess() {
                 this.$message.success("通讯录导入成功");
                 this.loadTable(1);
             },
-            addContact() {
-                this.form.contacts.push({ type: '', value: '' });
-            },
-            removeContact(index) {
-                this.form.contacts.splice(index, 1);
+            exportContacts() {
+                window.location.href = 'http://localhost:8080/user/export';
             }
         }
     });
 </script>
 </body>
 </html>
+//666啊
