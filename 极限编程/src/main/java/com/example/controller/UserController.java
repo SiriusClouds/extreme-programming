@@ -121,4 +121,5 @@ public class UserController {
         userService.unfavoriteUsers(ids);  // 批量取消收藏
         return Result.success();
     }
+    //这个功能暂时有bug，删除了
 }
